@@ -28,7 +28,7 @@ None required. The launcher is a single, self-contained executable. Just [downlo
 - Be sure you have write permission in that folder.
 - On Linux, [make the file executable](https://askubuntu.com/a/485001) before running it.
     - If the game does not start on Linux, make sure you have the following dependencies installed: `sdl2`, `sdl2_image`, `sdl2_ttf`, `sdl2_mixer`, `freetype2`. Some distros come with these preinstalled, but others don't.
-    - For Arch Linux, an [unofficial AUR package](https://aur.archlinux.org/packages/catapult-bin) is available.
+    - For Arch Linux, an [AUR package](https://aur.archlinux.org/packages/catapult-bin) is available.
 
 ## System requirements
 
