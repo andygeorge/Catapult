@@ -5,8 +5,8 @@ const _DEFAULT_FONTS = ["data/font/Terminus.ttf", "data/font/unifont.ttf"]
 
 var _game_options: Array = []
 
-var available_fonts: Array = [] setget , _get_available_fonts
-var font_config: Dictionary = {} setget , _get_font_config
+var available_fonts: Array = []: get = _get_available_fonts
+var font_config: Dictionary = {}: get = _get_font_config
 
 
 func _get_available_fonts() -> Array:
@@ -47,7 +47,9 @@ func load_available_fonts() -> void:
 		Status.post(tr("msg_failed_to_open_font_info"), Enums.MSG_ERROR)
 		return
 	
-	var json_result := JSON.parse(f.get_as_text())
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(f.get_as_text())
+	var json_result := test_json_conv.get_data()
 	
 	if json_result.error:
 		Status.post(tr("msg_could_not_parse_font_info"), Enums.MSG_ERROR)
@@ -62,7 +64,7 @@ func font_config_file_exists() -> bool:
 	
 	var config_file: String = Paths.config.plus_file("fonts.json")
 			
-	return Directory.new().file_exists(config_file)
+	return DirAccess.new().file_exists(config_file)
 
 
 func load_font_config() -> void:
@@ -70,11 +72,13 @@ func load_font_config() -> void:
 	var result: Dictionary = {}
 	var config_file: String = Paths.config.plus_file("fonts.json")
 	
-	if Directory.new().file_exists(config_file):
+	if DirAccess.new().file_exists(config_file):
 		var f := File.new()
 		var err = f.open(config_file, File.READ)
 		if err == 0:
-			var parse_result := JSON.parse(f.get_as_text())
+			var test_json_conv = JSON.new()
+			test_json_conv.parse(f.get_as_text())
+			var parse_result := test_json_conv.get_data()
 			if parse_result.error == 0:
 				result = parse_result.result
 			else:
@@ -93,18 +97,20 @@ func options_file_exists() -> bool:
 	
 	var options_file: String = Paths.config.plus_file("options.json")
 		
-	return Directory.new().file_exists(options_file)
+	return DirAccess.new().file_exists(options_file)
 
 
 func load_game_options() -> void:
 	
 	var options_file: String = Paths.config.plus_file("options.json")
 
-	if Directory.new().file_exists(options_file):
+	if DirAccess.new().file_exists(options_file):
 		var f := File.new()
 		var err = f.open(options_file, File.READ)
 		if err == 0:
-			var parse_result := JSON.parse(f.get_as_text())
+			var test_json_conv = JSON.new()
+			test_json_conv.parse(f.get_as_text())
+			var parse_result := test_json_conv.get_data()
 			if parse_result.error == 0:
 				_game_options = parse_result.result
 			else:
@@ -124,7 +130,7 @@ func _write_font_config() -> void:
 	var f = File.new()
 	var err = f.open(config_file, File.WRITE)
 	if err == 0:
-		var json = JSON.print(font_config, "    ")
+		var json = JSON.stringify(font_config, "    ")
 		f.store_string(json)
 		f.close()
 	else:
@@ -138,7 +144,7 @@ func write_game_options() -> void:
 	var f = File.new()
 	var err = f.open(options_file, File.WRITE)
 	if err == 0:
-		var json = JSON.print(_game_options, "    ")
+		var json = JSON.stringify(_game_options, "    ")
 		f.store_string(json)
 		f.close()
 		Status.post(tr("msg_game_options_saved"))
@@ -148,7 +154,7 @@ func write_game_options() -> void:
 
 func _install_font(font_index: int) -> bool:
 	
-	var d := Directory.new()
+	var d := DirAccess.new()
 	var font_file = available_fonts[font_index]["file"]
 	var source := "res://fonts/ingame".plus_file(font_file)
 	var dest: String = Paths.font_user.plus_file(font_file)

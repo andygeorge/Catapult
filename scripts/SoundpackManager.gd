@@ -80,7 +80,7 @@ const SOUNDPACKS = [
 
 func parse_sound_dir(sound_dir: String) -> Array:
 	
-	if not Directory.new().dir_exists(sound_dir):
+	if not DirAccess.new().dir_exists(sound_dir):
 		Status.post(tr("msg_no_sound_dir") % sound_dir, Enums.MSG_ERROR)
 		return []
 	
@@ -113,7 +113,7 @@ func get_installed(include_stock = false) -> Array:
 	
 	var packs = []
 	
-	if Directory.new().dir_exists(Paths.sound_user):
+	if DirAccess.new().dir_exists(Paths.sound_user):
 		packs.append_array(parse_sound_dir(Paths.sound_user))
 		for pack in packs:
 			pack["is_stock"] = false
@@ -134,7 +134,7 @@ func delete_pack(name: String) -> void:
 			emit_signal("soundpack_deletion_started")
 			Status.post(tr("msg_deleting_sound") % pack["location"])
 			FS.rm_dir(pack["location"])
-			yield(FS, "rm_dir_done")
+			await FS.rm_dir_done
 			emit_signal("soundpack_deletion_finished")
 			return
 			
@@ -160,25 +160,25 @@ func install_pack(soundpack_index: int, from_file = null, reinstall = false, kee
 		archive = from_file
 	else:
 		Downloader.download_file(pack["url"], Paths.own_dir, pack["filename"])
-		yield(Downloader, "download_finished")
+		await Downloader.download_finished
 		archive = Paths.own_dir.plus_file(pack["filename"])
-		if not Directory.new().file_exists(archive):
+		if not DirAccess.new().file_exists(archive):
 			Status.post(tr("msg_sound_download_failed"), Enums.MSG_ERROR)
 			emit_signal("soundpack_installation_finished")
 			return
 		
 	if reinstall:
 		FS.rm_dir(sound_dir + "/" + pack["name"])
-		yield(FS, "rm_dir_done")
+		await FS.rm_dir_done
 		
 	FS.extract(archive, tmp_dir)
-	yield(FS, "extract_done")
+	await FS.extract_done
 	if not keep_archive:
-		Directory.new().remove(archive)
+		DirAccess.new().remove(archive)
 	FS.move_dir(tmp_dir + "/" + pack["internal_path"], sound_dir + "/" + pack["name"])
-	yield(FS, "move_dir_done")
+	await FS.move_dir_done
 	FS.rm_dir(tmp_dir)
-	yield(FS, "rm_dir_done")
+	await FS.rm_dir_done
 	
 	Status.post(tr("msg_sound_installed"))
 	emit_signal("soundpack_installation_finished")
