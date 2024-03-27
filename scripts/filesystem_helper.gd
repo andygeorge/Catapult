@@ -10,9 +10,9 @@ signal zip_done
 
 var _platform: String = ""
 
-var last_extract_result: int = 0 setget , _get_last_extract_result
+var last_extract_result: int = 0: get = _get_last_extract_result
 # Stores the exit code of the last extract operation (0 if successful).
-var last_zip_result: int = 0 setget , _get_last_zip_result
+var last_zip_result: int = 0: get = _get_last_zip_result
 # Stores the exit code of the last zip operation (0 if successful).
 
 
@@ -33,10 +33,10 @@ func _get_last_zip_result() -> int:
 func list_dir(path: String, recursive := false) -> Array:
 	# Lists the files and subdirectories within a directory.
 	
-	var d = Directory.new()
+	var d = DirAccess.new()
 	d.open(path)
 	
-	var error = d.list_dir_begin(true)
+	var error = d.list_dir_begin() # TODOConverter3To4 fill missing arguments https://github.com/godotengine/godot/pull/40547
 	if error:
 		Status.post(tr("msg_list_dir_failed") % [path, error], Enums.MSG_ERROR)
 		return []
@@ -63,7 +63,7 @@ func _copy_dir_internal(data: Array) -> void:
 	var dest_dir: String = data[1]
 	
 	var dir = abs_path.get_file()
-	var d = Directory.new()
+	var d = DirAccess.new()
 	
 	var error = d.make_dir_recursive(dest_dir.plus_file(dir))
 	if error:
@@ -86,7 +86,7 @@ func copy_dir(abs_path: String, dest_dir: String) -> void:
 	
 	var tfe = ThreadedFuncExecutor.new()
 	tfe.execute(self, "_copy_dir_internal", [abs_path, dest_dir])
-	yield(tfe, "func_returned")
+	await tfe.func_returned
 	tfe.collect()
 	emit_signal("copy_dir_done")
 
@@ -94,7 +94,7 @@ func copy_dir(abs_path: String, dest_dir: String) -> void:
 func _rm_dir_internal(data: Array) -> void:
 	
 	var abs_path = data[0]
-	var d = Directory.new()
+	var d = DirAccess.new()
 	var error
 	
 	for item in list_dir(abs_path):
@@ -117,7 +117,7 @@ func rm_dir(abs_path: String) -> void:
 	
 	var tfe = ThreadedFuncExecutor.new()
 	tfe.execute(self, "_rm_dir_internal", [abs_path])
-	yield(tfe, "func_returned")
+	await tfe.func_returned
 	tfe.collect()
 	emit_signal("rm_dir_done")
 
@@ -127,7 +127,7 @@ func _move_dir_internal(data: Array) -> void:
 	var abs_path: String = data[0]
 	var abs_dest: String = data[1]
 	
-	var d = Directory.new()
+	var d = DirAccess.new()
 	var error = d.make_dir_recursive(abs_dest)
 	if error:
 		Status.post(tr("msg_create_dir_failed") % [abs_dest, error], Enums.MSG_ERROR)
@@ -155,7 +155,7 @@ func move_dir(abs_path: String, abs_dest: String) -> void:
 	
 	var tfe = ThreadedFuncExecutor.new()
 	tfe.execute(self, "_move_dir_internal", [abs_path, abs_dest])
-	yield(tfe, "func_returned")
+	await tfe.func_returned
 	tfe.collect()
 	emit_signal("move_dir_done")
 
@@ -193,7 +193,7 @@ func extract(path: String, dest_dir: String) -> void:
 		emit_signal("extract_done")
 		return
 		
-	var d = Directory.new()
+	var d = DirAccess.new()
 	if not d.dir_exists(dest_dir):
 		d.make_dir_recursive(dest_dir)
 		
@@ -201,7 +201,7 @@ func extract(path: String, dest_dir: String) -> void:
 		
 	var oew = OSExecWrapper.new()
 	oew.execute(command["name"], command["args"])
-	yield(oew, "process_exited")
+	await oew.process_exited
 	last_extract_result = oew.exit_code
 	if oew.exit_code:
 		Status.post(tr("msg_extract_error") % oew.exit_code, Enums.MSG_ERROR)
@@ -241,7 +241,7 @@ func zip(parent: String, dir_to_zip: String, dest_zip: String) -> void:
 		emit_signal("zip_done")
 		return
 		
-	var d = Directory.new()
+	var d = DirAccess.new()
 	if not d.dir_exists(Paths.tmp_dir):
 		d.make_dir_recursive(Paths.tmp_dir)
 	
@@ -249,7 +249,7 @@ func zip(parent: String, dir_to_zip: String, dest_zip: String) -> void:
 		
 	var oew = OSExecWrapper.new()
 	oew.execute(command["name"], command["args"])
-	yield(oew, "process_exited")
+	await oew.process_exited
 	last_zip_result = oew.exit_code
 	if oew.exit_code:
 		Status.post(tr("msg_zip_error") % oew.exit_code, Enums.MSG_ERROR)
